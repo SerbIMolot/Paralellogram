@@ -1,0 +1,386 @@
+<head>
+    <style>
+    body 
+    {
+      margin: 0px;
+      padding: 0px;
+      overflow: hidden;
+    }
+    #drawingCanvas 
+    {
+      z-index: 1;
+      position: absolute;
+      height: auto;
+      width: 97%;
+      top: 0;
+      right: 0;
+    
+    }
+    .canvasContainer{
+      float: right;
+      width: 97%;
+      height: 100%;
+    }
+
+    #clearButton
+    {
+      position:absolute;
+      z-index: 2;
+      margin: 0px;
+      top: 1%;
+      right: 0;
+      height: 4%;
+      width: auto;
+      background-color: #00FFF0;
+      border-radius: 12px;
+      border: 1px transparent solid; /* transparent border */
+      color: black;
+      padding: 13px 30px; /* remove 2px as we are now using the border */
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 12px;
+      opacity: 0.6;
+      cursor: pointer;
+    
+    }
+    #clearButton:hover {
+      background-color: hsl(176, 81%, 47%);
+      border-radius: 13px;
+    }
+    #about_text {
+      padding: 0;
+    }
+    #about_text h3 {
+      color: beige;
+    }
+
+    #open_menu {
+      color: lightyellow;
+      text-align: center;
+      height: auto;
+      font-size: 1vw;
+    }
+    #about_text p {
+      font-size: 14px;
+      display: block;
+      color: whitesmoke;
+      white-space: pre-wrap;
+      width: 100%;
+      margin: 0px;
+      padding: 0px;
+      line-height: 17px;
+      text-indent: 0px;
+    }
+    #about_text li{
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      width: 100%;
+      margin: 0px;
+      padding: 0px 0px 50px 0px;
+      height: auto;
+      list-style: none;
+      text-align: center;
+    
+    }
+
+    #about_text li:last-child{
+      position: absolute;
+      bottom: 3%;
+    
+    }
+    #closedBar {
+      height: 100%;
+      position: fixed;
+      z-index: 2;
+      top: 0;
+      left: 0;
+      background-color: #282828;
+      width: 3%;
+      opacity: 1;
+      transition: width 0.1s;
+      padding: 0;
+    }
+    #closedBar .slide {
+      width: 12px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .nav #close {
+      position: absolute;
+      top: 15px;
+      right: 22px;
+      margin-left: 50px;
+      font-size: 30px;
+      color: #ccc;
+    }
+    .nav {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 2;
+      top: 0;
+      left: 0;
+      background-color: #282828;
+      overflow-x: hidden;
+      padding-top: 60px;
+      transition: 0.7s;
+      line-height: 5%;
+    }
+    </style>
+</head>
+<body>
+    <div id="closedBar">
+        <span class="slide">
+            <a id="open_menu" href="#" onclick="openSlideMenu()">
+                About
+            </a>
+        </span>
+    </div>
+    <div id="menu" class="nav">
+        <a href="#" id="close" onclick="closeSlideMenu()">
+            Close
+        </a>
+        <ol id="about_text">
+            <li>
+                <h3> About program </h3> 
+                <p>This is program for calculating parallelogram when given 3 point in client part of a webpage (white board to the right), and drawing circle with same areas as parallelogram.</p>
+            </li>
+            <li>
+                <h3> How to use </h3>
+                <p>Click in 3 arbitrary places on white board to the right, it wil draw red point and show coordinates, with placement of third point parallelogram and circle would be drawn.</p>
+            </li>
+            <li>
+                <h3> Programmer  </h3>
+                <p>Made by Andreii Serb as test task for Junior Software Developer position in Evinent GmbH company. 10.14.2020.</p>
+            </li>
+        </div>
+    </div>
+
+    <div class="canvasContainer">
+        <canvas id="drawingCanvas">
+            !! IF YOU READ THIS, YOUR BROWSER DO NOT SUPPROT CANVAS  !!
+        </canvas>
+        <button id="clearButton" onclick=resetClick()>
+            <a>Clear</a>
+        </button>
+    </div>
+    <script>
+
+    var canvas = document.getElementById("drawingCanvas");
+    var context = canvas.getContext("2d");
+
+    canvas.addEventListener('click', mouseClick, false );
+    canvas.addEventListener('mousedown', mouseDown, false );
+    canvas.addEventListener('mouseup', mouseUp, false );
+    canvas.addEventListener('mousemove', mouseMove, false );
+    window.addEventListener('resize', onResize, false);
+
+    var dotsCoord = [];
+    var selectedDot;
+
+    canvas.width = document.body.clientWidth * 0.97; //document.width is obsolete
+    canvas.height = document.body.clientHeight; //document.height is obsolete
+
+    function drawParallelogram( strokeColor = "black", fillColor = "black" )
+    {
+
+      context.beginPath();
+
+      context.fillStyle = fillColor;
+      context.strokeStyle = strokeColor;
+
+      context.moveTo(dotsCoord[0].x,dotsCoord[0].y);
+      context.lineTo(dotsCoord[1].x, dotsCoord[1].y);
+      context.lineTo(dotsCoord[2].x, dotsCoord[2].y);
+
+      var forthDotX = dotsCoord[0].x + (dotsCoord[2].x - dotsCoord[1].x);
+      var forthDotY = dotsCoord[0].y +(dotsCoord[2].y - dotsCoord[1].y) ;
+
+      context.lineTo( forthDotX, forthDotY  );
+      context.lineTo( dotsCoord[0].x,dotsCoord[0].y  );
+    
+      context.stroke();
+
+      var area = 0;
+      for( var i = 0; i < dotsCoord.length-1; i++ )
+      {
+        area +=dotsCoord[i].x * dotsCoord[i+1].y ;
+      }
+      area += dotsCoord[dotsCoord.length - 1].x * dotsCoord[0].y;
+      for( var i = 0; i < dotsCoord.length-1; i++ )
+      {
+        area -=  dotsCoord[i+1].x * dotsCoord[i].y ;
+      }
+      area -= dotsCoord[dotsCoord.length - 1].y * dotsCoord[0].x;
+      area = Math.abs( area );
+
+      //draw dot in parallelogram
+      var centerX = (dotsCoord[0].x + dotsCoord[2].x) / 2; 
+      var centerY = (dotsCoord[0].y + dotsCoord[2].y) / 2;
+
+      // calculate circle raduis from area 
+      var circleRadius = Math.sqrt(area/Math.PI);
+
+      placeDot( centerX, centerY,circleRadius, {x: 0,y: 0} , false, "yellow" );
+
+      context.beginPath();
+      context.font = "14px serif";
+
+      context.strokeStyle = "black";
+      context.fillStyle = "black";
+      context.strokeText("Parallelogram area : " + area + "px", 10, 50);
+      context.strokeText("Circle area : " + area + "px", 10, 75);
+      context.strokeText("Circle radius : " + circleRadius + "px", 10, 100);
+      context.closePath();
+
+    }
+    function resetClick()
+    {
+    	context.clearRect(0,0, canvas.width, canvas.height);
+      dotsCoord = [];
+    }
+    //Checks if able to place dots
+    function dotCheck()
+    {
+      if( dotsCoord.length > 2 )
+      {
+    		return false;
+      }
+      return true;
+    }
+    function openSlideMenu(){
+      document.getElementById('menu').style.width = '25%';
+      document.getElementById('closedBar').style.opacity = 0;
+      document.getElementById('open_menu').style.opacity = 0;
+
+      document.getElementById('closedBar').style.width = '0';
+    }
+    function closeSlideMenu() {
+      document.getElementById('menu').style.width = '0';
+
+      document.getElementById('closedBar').style.opacity = 1;
+      setTimeout(
+          function () {
+              document.getElementById('closedBar').style.width = '3%';
+              document.getElementById('open_menu').style.opacity = 1;
+          }, 680);
+    }
+
+    function mouseMove( event )
+    {
+    
+      if( selectedDot != undefined )
+      {
+        selectedDot.x = event.offsetX;
+        selectedDot.y = event.offsetY;
+
+      }
+    }
+    function drawLoop() {
+
+      // clear old frame;
+      context.clearRect(0,0,canvas.width, canvas.height);
+      if( dotsCoord.length > 0 )
+      {
+
+        if( !dotCheck() )
+        {
+          drawParallelogram("blue", "blue");
+        }
+
+    }
+      dotsCoord.forEach( function(dot) {
+        placeDot(dot.x, dot.y, dot.radius, { x:dot.radius, y: dot.radius } ,true, dot.strokeColor, dot.fillColor);
+      });
+
+      requestAnimationFrame(drawLoop);
+    }
+    requestAnimationFrame(drawLoop);
+
+    function mouseDown( event )
+    {
+      dotsCoord.forEach( function (dot)
+      {
+        var xDist = event.offsetX - dot.x;
+        var yDist = event.offsetY - dot.y;
+
+        var distance = Math.sqrt( xDist * xDist + yDist*yDist );
+
+        if( distance < dot.radius )
+        {
+          selectedDot = dot;
+          return;
+        }
+      });
+    }
+    function mouseUp( event )
+    {
+        selectedDot = undefined;
+
+    }
+    function mouseClick( e )
+    {
+      if( dotCheck() )
+      {
+        dotsCoord.push({x:e.offsetX, y:e.offsetY, radius: 11, strokeColor: "red", fillColor: "red"});
+      }
+
+
+    }
+    function placeDot ( x, y, radius, textOffset, fill = false, strokeColor = "black", fillColor = "black" )
+    {
+    	context.beginPath();
+
+        context.strokeStyle = strokeColor;
+        context.fillStyle = fillColor;
+    
+      	context.arc( x, y, radius, 0, 2 * Math.PI, true);
+        if( fill )
+        {
+      		context.fill();
+        }
+        //calculate position of text
+        var textPosX = x + textOffset.x;
+        var textPosY = y + textOffset.y;
+
+        var text = "x: " + x + "; y: " + y;
+        // deal with text overflowing canvas 
+        context.font = "14px serif";
+        if( textPosX + context.measureText(text).width > canvas.width )
+        {
+          textPosX -= textOffset.x * 1.1 + context.measureText(text).width;
+        }
+        else if ( textPosX < 0 )
+        {
+          textPosX += textOffset.x + context.measureText(text).width;
+        }
+
+        if( textPosY + context.measureText(text).height > canvas.height )
+        {
+          textPosY -= textOffset.y * 2 + context.measureText(text).height;
+        }
+        else if ( textPosY < 0 )
+        {
+          textPosY += textOffset.y + context.measureText(text).height;
+        }
+
+        context.stroke();
+        context.closePath();
+        
+        context.strokeStyle = "black";
+        context.fillStyle = "black";
+        context.fillText(text, textPosX, textPosY);
+
+        context.closePath();
+    
+
+    }
+    function onResize()
+    {
+      canvas.width = document.body.clientWidth * 0.97;
+      canvas.height = document.body.clientHeight;
+    }
+
+    </script>
+</body>
